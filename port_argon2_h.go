@@ -40,9 +40,9 @@ type argon2_context struct {
 	flags uint32
 }
 
-type variant uint8
+type Variant uint8
 
 const (
-	Argon2d variant = iota
+	Argon2d Variant = iota
 	Argon2i
 )

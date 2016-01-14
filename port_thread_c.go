@@ -44,8 +44,8 @@ func fill_memory_blocks(instance *argon2_instance) error {
 
 			/* 3. Join remaining threads */
 			for l := instance.lanes - instance.threads; l < instance.lanes; l++ {
-				thread[l-instance.threads].Lock()
-				thread[l-instance.threads].Unlock()
+				thread[l].Lock()
+				thread[l].Unlock()
 			}
 		}
 	}

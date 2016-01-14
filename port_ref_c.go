@@ -1,5 +1,9 @@
 package argon2
 
+/*import (
+	"log"
+)*/
+
 func fill_segment(instance *argon2_instance, position argon2_position) {
 	var (
 		ref_block, curr_block            *block
@@ -69,7 +73,9 @@ func fill_segment(instance *argon2_instance, position argon2_position) {
 		/* 2 Creating a new block */
 		ref_block =
 			&instance.memory[uint64(instance.lane_length)*ref_lane+ref_index]
-		curr_block = &instance.memory[curr_offset]
+		//log.Printf("%d/%d\n", curr_offset, len(instance.memory))
+		// todo: verify
+		curr_block = &instance.memory[curr_offset-1]
 		fill_block(&instance.memory[prev_offset], ref_block, curr_block)
 	}
 }

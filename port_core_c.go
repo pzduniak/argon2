@@ -2,6 +2,7 @@ package argon2
 
 import (
 	"encoding/binary"
+	"log"
 
 	"github.com/dchest/blake2b"
 )
@@ -55,12 +56,16 @@ func validate_inputs(ctx *argon2_context) error {
 
 	// Validate memory cost
 	if ctx.m_cost < ARGON2_MIN_MEMORY {
+		log.Print("oops")
 		return ErrMemoryTooLittle
 	}
 	if ctx.m_cost > ARGON2_MAX_MEMORY {
 		return ErrMemoryTooMuch
 	}
 	if ctx.m_cost < 8*ctx.lanes {
+		log.Print(ctx.m_cost)
+		log.Print(8 * ctx.lanes)
+		log.Print("oops2")
 		return ErrMemoryTooLittle
 	}
 
@@ -123,7 +128,7 @@ func initialize(instance *argon2_instance, context *argon2_context) error {
 	return nil
 }
 
-func initial_hash(blockhash *[ARGON2_PREHASH_SEED_LENGTH]byte, context *argon2_context, variant variant) error {
+func initial_hash(blockhash *[ARGON2_PREHASH_SEED_LENGTH]byte, context *argon2_context, variant Variant) error {
 	state, err := blake2b.New(&blake2b.Config{
 		Size: ARGON2_PREHASH_DIGEST_LENGTH,
 	})

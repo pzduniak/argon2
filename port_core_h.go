@@ -35,7 +35,7 @@ type argon2_instance struct {
 	lane_length     uint32
 	lanes           uint32
 	threads         uint32
-	variant         variant
+	variant         Variant
 	print_internals int
 }
 

@@ -1,6 +1,6 @@
 package argon2
 
-func argon2_core(ctx *argon2_context, variant variant) error {
+func argon2_core(ctx *argon2_context, variant Variant) error {
 	/* 1. Validate all inputs */
 	if err := validate_inputs(ctx); err != nil {
 		return err
