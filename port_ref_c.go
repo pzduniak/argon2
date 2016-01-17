@@ -1,6 +1,6 @@
 package argon2
 
-func fill_segment(ins *instance, pos position) {
+func fillSegment(ins *instance, pos position) {
 	var (
 		refBlock, currBlock           *block
 		pseudoRand, refIndex, refLane uint64
@@ -18,7 +18,7 @@ func fill_segment(ins *instance, pos position) {
 	pseudoRands = make([]uint64, ins.segmentLength)
 
 	if dataIndependentAddressing {
-		generate_addresses(ins, &pos, pseudoRands)
+		generateAddresses(ins, &pos, pseudoRands)
 	}
 
 	startingIndex = 0
@@ -69,43 +69,43 @@ func fill_segment(ins *instance, pos position) {
 			&ins.memory[uint64(ins.laneLength)*refLane+refIndex]
 		//log.Printf("%d/%d\n", currOffset, len(ins.memory))
 		currBlock = &ins.memory[currOffset]
-		fill_block(&ins.memory[prevOffset], refBlock, currBlock)
+		fillBlock(&ins.memory[prevOffset], refBlock, currBlock)
 
 		currOffset++
 		prevOffset++
 	}
 }
 
-func generate_addresses(ins *instance, pos *position, pseudoRands []uint64) {
-	var zero_block, input_block, address_block block
+func generateAddresses(ins *instance, pos *position, pseudoRands []uint64) {
+	var zeroBlock, inputBlock, addressBlock block
 
-	init_block_value(&zero_block, 0)
-	init_block_value(&input_block, 0)
-	init_block_value(&address_block, 0)
+	initBlockValue(&zeroBlock, 0)
+	initBlockValue(&inputBlock, 0)
+	initBlockValue(&addressBlock, 0)
 
 	if ins == nil || pos == nil {
 		return
 	}
 
-	input_block[0] = uint64(pos.pass)
-	input_block[1] = uint64(pos.lane)
-	input_block[2] = uint64(pos.slice)
-	input_block[3] = uint64(ins.memoryBlocks)
-	input_block[4] = uint64(ins.passes)
-	input_block[5] = uint64(ins.variant)
+	inputBlock[0] = uint64(pos.pass)
+	inputBlock[1] = uint64(pos.lane)
+	inputBlock[2] = uint64(pos.slice)
+	inputBlock[3] = uint64(ins.memoryBlocks)
+	inputBlock[4] = uint64(ins.passes)
+	inputBlock[5] = uint64(ins.variant)
 
 	for i := uint32(0); i < ins.segmentLength; i++ {
 		if i%addressesInBlock == 0 {
-			input_block[6]++
-			fill_block(&zero_block, &input_block, &address_block)
-			fill_block(&zero_block, &address_block, &address_block)
+			inputBlock[6]++
+			fillBlock(&zeroBlock, &inputBlock, &addressBlock)
+			fillBlock(&zeroBlock, &addressBlock, &addressBlock)
 		}
-		pseudoRands[i] = address_block[i%addressesInBlock]
+		pseudoRands[i] = addressBlock[i%addressesInBlock]
 	}
 }
 
-func init_block_value(b *block, in byte) {
-	for i, _ := range b {
+func initBlockValue(b *block, in byte) {
+	for i := range b {
 		b[i] = uint64(in)
 	}
 }
@@ -120,12 +120,12 @@ func xorBlock(dst, src *block) {
 	}
 }
 
-func fill_block(prev_block, refBlock, next_block *block) {
-	var blockR, block_tmp block
+func fillBlock(prefBlock, refBlock, nextBlock *block) {
+	var blockR, blockTmp block
 
 	copyBlock(&blockR, refBlock)
-	xorBlock(&blockR, prev_block)
-	copyBlock(&block_tmp, &blockR)
+	xorBlock(&blockR, prefBlock)
+	copyBlock(&blockTmp, &blockR)
 
 	/* Apply Blake2 on columns of 64-bit words: (0,1,...,15) , then
 	   (16,17,..31)... finally (112,113,...127) */
@@ -151,6 +151,6 @@ func fill_block(prev_block, refBlock, next_block *block) {
 			&blockR[2*i+113])
 	}
 
-	copyBlock(next_block, &block_tmp)
-	xorBlock(next_block, &blockR)
+	copyBlock(nextBlock, &blockTmp)
+	xorBlock(nextBlock, &blockR)
 }

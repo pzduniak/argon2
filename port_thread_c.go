@@ -27,7 +27,7 @@ func fillMemoryBlocks(ins *instance) error {
 
 				go func(ins *instance, pos position) {
 					defer wg.Done()
-					fill_segment(ins, pos)
+					fillSegment(ins, pos)
 				}(ins, pos)
 			}
 

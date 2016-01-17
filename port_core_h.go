@@ -3,7 +3,7 @@ package argon2
 /* Argon2 internal constants */
 const (
 	// Version of the algorithm
-	ARGON2_VERSION_NUMBER = 0x10
+	versionNumber = 0x10
 
 	// Memory block size in bytes
 	blockSize     = 1024

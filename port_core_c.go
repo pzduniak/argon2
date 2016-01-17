@@ -107,23 +107,23 @@ func initialize(ins *instance, ctx *context) error {
 	blockhash := [prehashSeedLength]byte{}
 
 	// Hash all inputs
-	if err := initial_hash(&blockhash, ctx, ins.variant); err != nil {
+	if err := initialHash(&blockhash, ctx, ins.variant); err != nil {
 		return err
 	}
 
 	// Zero 8 extra bytes
-	secure_wipe_memory(blockhash[prehashDigestLength:prehashSeedLength])
+	secureWipeMemory(blockhash[prehashDigestLength:prehashSeedLength])
 
 	/* 3. Creating first blocks, we always have at least two blocks in a slice */
-	fill_first_blocks(&blockhash, ins)
+	fillFirstBlocks(&blockhash, ins)
 
 	/* Clearing the hash */
-	secure_wipe_memory(blockhash[:])
+	secureWipeMemory(blockhash[:])
 
 	return nil
 }
 
-func initial_hash(blockhash *[prehashSeedLength]byte, ctx *context, variant Variant) error {
+func initialHash(blockhash *[prehashSeedLength]byte, ctx *context, variant Variant) error {
 	state, err := blake2b.New(&blake2b.Config{
 		Size: prehashDigestLength,
 	})
@@ -145,7 +145,7 @@ func initial_hash(blockhash *[prehashSeedLength]byte, ctx *context, variant Vari
 	binary.LittleEndian.PutUint32(value, ctx.timeCost)
 	state.Write(value)
 
-	binary.LittleEndian.PutUint32(value, ARGON2_VERSION_NUMBER)
+	binary.LittleEndian.PutUint32(value, versionNumber)
 	state.Write(value)
 
 	binary.LittleEndian.PutUint32(value, uint32(variant))
@@ -156,7 +156,7 @@ func initial_hash(blockhash *[prehashSeedLength]byte, ctx *context, variant Vari
 	if ctx.pwd != nil {
 		state.Write(ctx.pwd)
 		if ctx.flags&FlagClearPassword != 0 {
-			secure_wipe_memory(ctx.pwd)
+			secureWipeMemory(ctx.pwd)
 			ctx.pwd = nil
 		}
 	}
@@ -172,7 +172,7 @@ func initial_hash(blockhash *[prehashSeedLength]byte, ctx *context, variant Vari
 	if ctx.secret != nil {
 		state.Write(ctx.secret)
 		if ctx.flags&FlagClearSecret != 0 {
-			secure_wipe_memory(ctx.secret)
+			secureWipeMemory(ctx.secret)
 			ctx.secret = nil
 		}
 	}
@@ -191,45 +191,45 @@ func initial_hash(blockhash *[prehashSeedLength]byte, ctx *context, variant Vari
 	return nil
 }
 
-func secure_wipe_memory(input []byte) {
-	for i, _ := range input {
+func secureWipeMemory(input []byte) {
+	for i := range input {
 		input[i] = 0
 	}
 }
 
-func secure_wipe_memory_uint64(input []uint64) {
-	for i, _ := range input {
+func secureWipeMemoryUint64(input []uint64) {
+	for i := range input {
 		input[i] = 0
 	}
 }
 
-func fill_first_blocks(blockhash *[prehashSeedLength]byte, ins *instance) error {
-	blockhash_bytes := make([]byte, blockSize)
+func fillFirstBlocks(blockhash *[prehashSeedLength]byte, ins *instance) error {
+	blockhashBytes := make([]byte, blockSize)
 	for l := uint32(0); l < ins.lanes; l++ {
 		binary.LittleEndian.PutUint32(blockhash[prehashDigestLength:], 0)
 		binary.LittleEndian.PutUint32(blockhash[prehashDigestLength+4:], l)
-		if err := blakeLong(blockhash_bytes, blockhash[:]); err != nil {
+		if err := blakeLong(blockhashBytes, blockhash[:]); err != nil {
 			return err
 		}
-		load_block(&ins.memory[l*ins.laneLength], blockhash_bytes)
+		loadBlock(&ins.memory[l*ins.laneLength], blockhashBytes)
 
 		binary.LittleEndian.PutUint32(blockhash[prehashDigestLength:], 1)
-		if err := blakeLong(blockhash_bytes, blockhash[:]); err != nil {
+		if err := blakeLong(blockhashBytes, blockhash[:]); err != nil {
 			return err
 		}
-		load_block(&ins.memory[l*ins.laneLength+1], blockhash_bytes)
+		loadBlock(&ins.memory[l*ins.laneLength+1], blockhashBytes)
 	}
-	secure_wipe_memory(blockhash_bytes)
+	secureWipeMemory(blockhashBytes)
 	return nil
 }
 
-func load_block(dst *block, input []byte) {
+func loadBlock(dst *block, input []byte) {
 	for i := 0; i < qwordsInBlock; i++ {
 		dst[i] = binary.LittleEndian.Uint64(input[i*8:])
 	}
 }
 
-func store_block(output []byte, src *block) {
+func storeBlock(output []byte, src *block) {
 	for i := 0; i < qwordsInBlock; i++ {
 		binary.LittleEndian.PutUint64(output[i*8:], src[i])
 	}
@@ -247,76 +247,76 @@ func indexAlpha(ins *instance, pos *position, pseudoRand uint32, sameLane bool) 
 	 *      Other lanes : (SYNC_POINTS - 1) last segments
 	 */
 	var (
-		reference_area_size               uint32
-		relative_position                 uint64
-		start_position, absolute_position uint32
+		referenceAreaSize               uint32
+		relativePosition                uint64
+		startPosition, absolutePosition uint32
 	)
 
 	if pos.pass == 0 {
 		/* First pass */
 		if pos.slice == 0 {
 			/* First slice */
-			reference_area_size =
+			referenceAreaSize =
 				pos.index - 1 /* all but the previous */
 		} else {
 			if sameLane {
 				/* The same lane => add current segment */
-				reference_area_size =
+				referenceAreaSize =
 					uint32(pos.slice)*ins.segmentLength +
 						pos.index - 1
 			} else {
-				reference_area_size =
+				referenceAreaSize =
 					uint32(pos.slice) * ins.segmentLength
 
 				if pos.index == 0 {
-					reference_area_size -= 1
+					referenceAreaSize--
 				}
 			}
 		}
 	} else {
 		/* Second pass */
 		if sameLane {
-			reference_area_size = ins.laneLength -
+			referenceAreaSize = ins.laneLength -
 				ins.segmentLength + pos.index -
 				1
 		} else {
-			reference_area_size = ins.laneLength -
+			referenceAreaSize = ins.laneLength -
 				ins.segmentLength
 
 			if pos.index == 0 {
-				reference_area_size -= 1
+				referenceAreaSize--
 			}
 		}
 	}
 
-	/* 1.2.4. Mapping pseudoRand to 0..<reference_area_size-1> and produce
+	/* 1.2.4. Mapping pseudoRand to 0..<referenceAreaSize-1> and produce
 	 * relative position */
-	relative_position = uint64(pseudoRand)
-	relative_position = relative_position * relative_position >> 32
-	relative_position = uint64(reference_area_size) - 1 -
-		(uint64(reference_area_size) * relative_position >> 32)
+	relativePosition = uint64(pseudoRand)
+	relativePosition = relativePosition * relativePosition >> 32
+	relativePosition = uint64(referenceAreaSize) - 1 -
+		(uint64(referenceAreaSize) * relativePosition >> 32)
 
 	/* 1.2.5 Computing starting position */
-	start_position = 0
+	startPosition = 0
 
 	if pos.pass != 0 {
 		if pos.slice == syncPoints-1 {
-			start_position = 0
+			startPosition = 0
 		} else {
-			start_position = (uint32(pos.slice) + 1) * ins.segmentLength
+			startPosition = (uint32(pos.slice) + 1) * ins.segmentLength
 		}
 	}
 
 	/* 1.2.6. Computing absolute position */
-	absolute_position = (start_position + uint32(relative_position)) %
+	absolutePosition = (startPosition + uint32(relativePosition)) %
 		ins.laneLength /* absolute position */
-	return absolute_position
+	return absolutePosition
 }
 
 func clearMemory(ins *instance, clear bool) {
 	if ins.memory != nil && clear {
 		for _, b := range ins.memory {
-			for i, _ := range b {
+			for i := range b {
 				b[i] = 0
 			}
 		}

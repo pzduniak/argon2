@@ -65,10 +65,10 @@ func finalize(ctx *context, ins *instance) {
 	/* Hash the result */
 	{
 		var blockhashBytes [blockSize]byte
-		store_block(blockhashBytes[:], &blockhash)
+		storeBlock(blockhashBytes[:], &blockhash)
 		blakeLong(ctx.out, blockhashBytes[:])
-		secure_wipe_memory_uint64(blockhash[:])
-		secure_wipe_memory(blockhashBytes[:])
+		secureWipeMemoryUint64(blockhash[:])
+		secureWipeMemory(blockhashBytes[:])
 	}
 
 	/* Clear memory */
