@@ -43,6 +43,16 @@ func validateInputs(ctx *context) error {
 		}
 	}
 
+	if ctx.secret != nil {
+		if len(ctx.secret) < minSecretLength {
+			return ErrSecretTooShort
+		}
+
+		if len(ctx.secret) > maxSecretLength {
+			return ErrSecretTooLong
+		}
+	}
+
 	if ctx.ad != nil {
 		if len(ctx.ad) < minADLength {
 			return ErrADTooShort
@@ -115,7 +125,9 @@ func initialize(ins *instance, ctx *context) error {
 	secureWipeMemory(blockhash[prehashDigestLength:prehashSeedLength])
 
 	/* 3. Creating first blocks, we always have at least two blocks in a slice */
-	fillFirstBlocks(&blockhash, ins)
+	if err := fillFirstBlocks(&blockhash, ins); err != nil {
+		return err
+	}
 
 	/* Clearing the hash */
 	secureWipeMemory(blockhash[:])
@@ -134,27 +146,44 @@ func initialHash(blockhash *[prehashSeedLength]byte, ctx *context, variant Varia
 	value := make([]byte, 4) // 32-bit expressed in 4xuint8
 
 	binary.LittleEndian.PutUint32(value, ctx.lanes)
-	state.Write(value)
+	if _, err = state.Write(value); err != nil {
+		return err
+	}
 
 	binary.LittleEndian.PutUint32(value, uint32(len(ctx.out)))
-	state.Write(value)
+	if _, err = state.Write(value); err != nil {
+		return err
+	}
 
 	binary.LittleEndian.PutUint32(value, ctx.memoryCost)
-	state.Write(value)
+	if _, err = state.Write(value); err != nil {
+		return err
+	}
 
 	binary.LittleEndian.PutUint32(value, ctx.timeCost)
-	state.Write(value)
+	if _, err = state.Write(value); err != nil {
+		return err
+	}
 
 	binary.LittleEndian.PutUint32(value, versionNumber)
-	state.Write(value)
+	if _, err = state.Write(value); err != nil {
+		return err
+	}
 
 	binary.LittleEndian.PutUint32(value, uint32(variant))
-	state.Write(value)
+	if _, err = state.Write(value); err != nil {
+		return err
+	}
 
 	binary.LittleEndian.PutUint32(value, uint32(len(ctx.pwd)))
-	state.Write(value)
+	if _, err = state.Write(value); err != nil {
+		return err
+	}
+
 	if ctx.pwd != nil {
-		state.Write(ctx.pwd)
+		if _, err = state.Write(ctx.pwd); err != nil {
+			return err
+		}
 		if ctx.flags&FlagClearPassword != 0 {
 			secureWipeMemory(ctx.pwd)
 			ctx.pwd = nil
@@ -162,15 +191,25 @@ func initialHash(blockhash *[prehashSeedLength]byte, ctx *context, variant Varia
 	}
 
 	binary.LittleEndian.PutUint32(value, uint32(len(ctx.salt)))
-	state.Write(value)
+	if _, err = state.Write(value); err != nil {
+		return err
+	}
+
 	if ctx.salt != nil {
-		state.Write(ctx.salt)
+		if _, err = state.Write(ctx.salt); err != nil {
+			return err
+		}
 	}
 
 	binary.LittleEndian.PutUint32(value, uint32(len(ctx.secret)))
-	state.Write(value)
+	if _, err = state.Write(value); err != nil {
+		return err
+	}
+
 	if ctx.secret != nil {
-		state.Write(ctx.secret)
+		if _, err = state.Write(ctx.secret); err != nil {
+			return err
+		}
 		if ctx.flags&FlagClearSecret != 0 {
 			secureWipeMemory(ctx.secret)
 			ctx.secret = nil
@@ -178,9 +217,14 @@ func initialHash(blockhash *[prehashSeedLength]byte, ctx *context, variant Varia
 	}
 
 	binary.LittleEndian.PutUint32(value, uint32(len(ctx.ad)))
-	state.Write(value)
+	if _, err = state.Write(value); err != nil {
+		return err
+	}
+
 	if ctx.ad != nil {
-		state.Write(ctx.ad)
+		if _, err = state.Write(ctx.ad); err != nil {
+			return err
+		}
 	}
 
 	result := state.Sum(nil)

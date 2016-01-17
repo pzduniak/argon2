@@ -15,6 +15,8 @@ var (
 	ErrPwdTooLong         = errors.New("argon2: Password is too long")
 	ErrSaltTooShort       = errors.New("argon2: Salt is too short")
 	ErrSaltTooLong        = errors.New("argon2: Salt is too long")
+	ErrSecretTooShort     = errors.New("argon2: Secret is too short")
+	ErrSecretTooLong      = errors.New("argon2: Secret is too long")
 	ErrADTooShort         = errors.New("argon2: Additional data is too short")
 	ErrADTooLong          = errors.New("argon2: Additional data is too long")
 	ErrMemoryTooLittle    = errors.New("argon2: Too little memory passed")

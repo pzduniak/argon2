@@ -42,14 +42,17 @@ func core(ctx *context, variant Variant) error {
 		return err
 	}
 
-	finalize(ctx, &ins)
+	/* 5. Perform the final hash */
+	if err := finalize(ctx, &ins); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func finalize(ctx *context, ins *instance) {
+func finalize(ctx *context, ins *instance) error {
 	if ctx == nil || ins == nil {
-		return
+		return ErrIncorrectParameter
 	}
 
 	var blockhash block
@@ -66,7 +69,9 @@ func finalize(ctx *context, ins *instance) {
 	{
 		var blockhashBytes [blockSize]byte
 		storeBlock(blockhashBytes[:], &blockhash)
-		blakeLong(ctx.out, blockhashBytes[:])
+		if err := blakeLong(ctx.out, blockhashBytes[:]); err != nil {
+			return err
+		}
 		secureWipeMemoryUint64(blockhash[:])
 		secureWipeMemory(blockhashBytes[:])
 	}
@@ -76,4 +81,6 @@ func finalize(ctx *context, ins *instance) {
 
 	/* Deallocate the memory */
 	//free_memory(ins.memory)
+
+	return nil
 }

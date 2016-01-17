@@ -21,8 +21,6 @@ func fillSegment(ins *instance, pos position) {
 		generateAddresses(ins, &pos, pseudoRands)
 	}
 
-	startingIndex = 0
-
 	if pos.pass == 0 && pos.slice == 0 {
 		startingIndex = 2 // We have already generated the first two blocks
 	}

@@ -18,8 +18,8 @@ const (
 	maxADLength       = 0xFFFFFFFF
 	minSaltLength     = 8
 	maxSaltLength     = 0xFFFFFFFF
-	minSecret         = 0
-	maxSecret         = 0xFFFFFFFF
+	minSecretLength   = 0
+	maxSecretLength   = 0xFFFFFFFF
 )
 
 // FLags regarding clearing of inputs during hashing

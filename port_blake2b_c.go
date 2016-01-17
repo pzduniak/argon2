@@ -25,8 +25,12 @@ func blakeLong(out []byte, in []byte) error {
 			return err
 		}
 
-		hash.Write(outlenBytes)
-		hash.Write(in)
+		if _, err := hash.Write(outlenBytes); err != nil {
+			return err
+		}
+		if _, err := hash.Write(in); err != nil {
+			return err
+		}
 		sum := hash.Sum(nil)
 		copy(out, sum)
 		return nil
@@ -44,8 +48,12 @@ func blakeLong(out []byte, in []byte) error {
 		return err
 	}
 
-	hash.Write(outlenBytes)
-	hash.Write(in)
+	if _, err = hash.Write(outlenBytes); err != nil {
+		return err
+	}
+	if _, err = hash.Write(in); err != nil {
+		return err
+	}
 	sum := hash.Sum(nil)
 	copy(out, sum[:blakeOutBytes/2])
 	out = out[blakeOutBytes/2:]
@@ -54,7 +62,9 @@ func blakeLong(out []byte, in []byte) error {
 	for toProduce > blakeOutBytes {
 		copy(buffer[:], sum)
 		hash.Reset()
-		hash.Write(buffer[:])
+		if _, err = hash.Write(buffer[:]); err != nil {
+			return err
+		}
 		sum = hash.Sum(nil)
 		copy(out, sum[:blakeOutBytes/2])
 		out = out[blakeOutBytes/2:]
@@ -68,7 +78,9 @@ func blakeLong(out []byte, in []byte) error {
 	if err != nil {
 		return err
 	}
-	hash.Write(buffer[:])
+	if _, err = hash.Write(buffer[:]); err != nil {
+		return err
+	}
 	sum = hash.Sum(nil)
 	copy(out, sum)
 
