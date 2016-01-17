@@ -121,16 +121,10 @@ func initialize(ins *instance, ctx *context) error {
 		return err
 	}
 
-	// Zero 8 extra bytes
-	secureWipeMemory(blockhash[prehashDigestLength:prehashSeedLength])
-
 	/* 3. Creating first blocks, we always have at least two blocks in a slice */
 	if err := fillFirstBlocks(&blockhash, ins); err != nil {
 		return err
 	}
-
-	/* Clearing the hash */
-	secureWipeMemory(blockhash[:])
 
 	return nil
 }
@@ -184,10 +178,6 @@ func initialHash(blockhash *[prehashSeedLength]byte, ctx *context, variant Varia
 		if _, err = state.Write(ctx.pwd); err != nil {
 			return err
 		}
-		if ctx.flags&FlagClearPassword != 0 {
-			secureWipeMemory(ctx.pwd)
-			ctx.pwd = nil
-		}
 	}
 
 	binary.LittleEndian.PutUint32(value, uint32(len(ctx.salt)))
@@ -210,10 +200,6 @@ func initialHash(blockhash *[prehashSeedLength]byte, ctx *context, variant Varia
 		if _, err = state.Write(ctx.secret); err != nil {
 			return err
 		}
-		if ctx.flags&FlagClearSecret != 0 {
-			secureWipeMemory(ctx.secret)
-			ctx.secret = nil
-		}
 	}
 
 	binary.LittleEndian.PutUint32(value, uint32(len(ctx.ad)))
@@ -235,18 +221,6 @@ func initialHash(blockhash *[prehashSeedLength]byte, ctx *context, variant Varia
 	return nil
 }
 
-func secureWipeMemory(input []byte) {
-	for i := range input {
-		input[i] = 0
-	}
-}
-
-func secureWipeMemoryUint64(input []uint64) {
-	for i := range input {
-		input[i] = 0
-	}
-}
-
 func fillFirstBlocks(blockhash *[prehashSeedLength]byte, ins *instance) error {
 	blockhashBytes := make([]byte, blockSize)
 	for l := uint32(0); l < ins.lanes; l++ {
@@ -263,7 +237,6 @@ func fillFirstBlocks(blockhash *[prehashSeedLength]byte, ins *instance) error {
 		}
 		loadBlock(&ins.memory[l*ins.laneLength+1], blockhashBytes)
 	}
-	secureWipeMemory(blockhashBytes)
 	return nil
 }
 
@@ -355,14 +328,4 @@ func indexAlpha(ins *instance, pos *position, pseudoRand uint32, sameLane bool) 
 	absolutePosition = (startPosition + uint32(relativePosition)) %
 		ins.laneLength /* absolute position */
 	return absolutePosition
-}
-
-func clearMemory(ins *instance, clear bool) {
-	if ins.memory != nil && clear {
-		for _, b := range ins.memory {
-			for i := range b {
-				b[i] = 0
-			}
-		}
-	}
 }

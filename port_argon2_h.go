@@ -22,14 +22,6 @@ const (
 	maxSecretLength   = 0xFFFFFFFF
 )
 
-// Flags regarding clearing of inputs during hashing
-const (
-	FlagClearPassword = 1 << 0
-	FlagClearSecret   = 1 << 1
-	FlagClearMemory   = 1 << 2
-	DefaultFlags      = FlagClearMemory
-)
-
 type context struct {
 	out        []byte
 	pwd        []byte
@@ -40,8 +32,6 @@ type context struct {
 	memoryCost uint32
 	lanes      uint32
 	threads    uint32
-
-	flags uint32
 }
 
 // Variant is the type of algorithm to use

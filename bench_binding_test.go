@@ -12,13 +12,13 @@ var (
 	salt     = []byte("test123456")
 )
 
-func BenchmarkConversion(b *testing.B) {
+func BenchmarkBConversion(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		conv.Key(password, salt, 3, 4, 4096, 32, conv.Argon2i)
 	}
 }
 
-func BenchmarkBindings(b *testing.B) {
+func BenchmarkBBindings(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		bc := bind.Context{
 			Iterations:  3,

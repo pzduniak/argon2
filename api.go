@@ -15,7 +15,6 @@ func Key(password, salt []byte, iterations, parallelism, memory uint32, keyLengt
 		memoryCost: memory,
 		lanes:      parallelism,
 		threads:    parallelism,
-		flags:      DefaultFlags,
 	}
 
 	if err := core(ctx, variant); err != nil {

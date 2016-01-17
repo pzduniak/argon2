@@ -57,7 +57,7 @@ func finalize(ctx *context, ins *instance) error {
 
 	var blockhash block
 
-	copyBlock(&blockhash, &ins.memory[ins.laneLength-1])
+	copy(blockhash[:], ins.memory[ins.laneLength-1][:])
 
 	/* XOR the last blocks */
 	for l := uint32(1); l < ins.lanes; l++ {
@@ -72,15 +72,7 @@ func finalize(ctx *context, ins *instance) error {
 		if err := blakeLong(ctx.out, blockhashBytes[:]); err != nil {
 			return err
 		}
-		secureWipeMemoryUint64(blockhash[:])
-		secureWipeMemory(blockhashBytes[:])
 	}
-
-	/* Clear memory */
-	clearMemory(ins, ctx.flags&FlagClearPassword != 0)
-
-	/* Deallocate the memory */
-	//free_memory(ins.memory)
 
 	return nil
 }
