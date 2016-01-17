@@ -2,12 +2,11 @@ package argon2
 
 import (
 	"encoding/binary"
-	"log"
 
 	"github.com/dchest/blake2b"
 )
 
-func validate_inputs(ctx *argon2_context) error {
+func validateInputs(ctx *context) error {
 	if ctx == nil {
 		return ErrIncorrectParameter
 	}
@@ -16,111 +15,107 @@ func validate_inputs(ctx *argon2_context) error {
 		return ErrOutputPtrNull
 	}
 
-	if len(ctx.out) < ARGON2_MIN_OUTLEN {
+	if len(ctx.out) < minOutlen {
 		return ErrOutputTooShort
 	}
 
-	if len(ctx.out) > ARGON2_MAX_OUTLEN {
+	if len(ctx.out) > maxOutlen {
 		return ErrOutputTooLong
 	}
 
 	if ctx.pwd != nil {
-		if len(ctx.pwd) < ARGON2_MIN_PWD_LENGTH {
+		if len(ctx.pwd) < minPasswordLength {
 			return ErrPwdTooShort
 		}
 
-		if len(ctx.pwd) > ARGON2_MAX_PWD_LENGTH {
+		if len(ctx.pwd) > maxPasswordLength {
 			return ErrPwdTooLong
 		}
 	}
 
 	if ctx.salt != nil {
-		if len(ctx.salt) < ARGON2_MIN_SALT_LENGTH {
+		if len(ctx.salt) < minSaltLength {
 			return ErrSaltTooShort
 		}
 
-		if len(ctx.salt) > ARGON2_MAX_SALT_LENGTH {
+		if len(ctx.salt) > maxSaltLength {
 			return ErrSaltTooLong
 		}
 	}
 
 	if ctx.ad != nil {
-		if len(ctx.ad) < ARGON2_MIN_AD_LENGTH {
+		if len(ctx.ad) < minADLength {
 			return ErrADTooShort
 		}
 
-		if len(ctx.ad) > ARGON2_MAX_AD_LENGTH {
+		if len(ctx.ad) > maxADLength {
 			return ErrADTooLong
 		}
 	}
 
 	// Validate memory cost
-	if ctx.m_cost < ARGON2_MIN_MEMORY {
-		log.Print("oops")
+	if ctx.memoryCost < minMemory {
 		return ErrMemoryTooLittle
 	}
-	if ctx.m_cost > ARGON2_MAX_MEMORY {
+	if ctx.memoryCost > maxMemory {
 		return ErrMemoryTooMuch
 	}
-	if ctx.m_cost < 8*ctx.lanes {
-		log.Print(ctx.m_cost)
-		log.Print(8 * ctx.lanes)
-		log.Print("oops2")
+	if ctx.memoryCost < 8*ctx.lanes {
 		return ErrMemoryTooLittle
 	}
 
 	// Validate time cost
-	if ctx.t_cost < ARGON2_MIN_TIME {
+	if ctx.timeCost < minTime {
 		return ErrTimeTooSmall
 	}
-	if ctx.t_cost > ARGON2_MAX_TIME {
+	if ctx.timeCost > maxTime {
 		return ErrTimeTooLarge
 	}
 
 	// Validate lanes
-	if ctx.lanes < ARGON2_MIN_LANES {
+	if ctx.lanes < minLanes {
 		return ErrLanesTooFew
 	}
-	if ctx.lanes > ARGON2_MAX_LANES {
+	if ctx.lanes > maxLanes {
 		return ErrLanesTooMany
 	}
 
 	// Validate threads
-	if ctx.threads < ARGON2_MIN_THREADS {
+	if ctx.threads < minThreads {
 		return ErrThreadsTooFew
 	}
-	if ctx.threads > ARGON2_MAX_THREADS {
+	if ctx.threads > maxThreads {
 		return ErrThreadsTooMany
 	}
 
 	return nil
 }
 
-func initialize(instance *argon2_instance, context *argon2_context) error {
-	if instance == nil || context == nil {
+func initialize(ins *instance, ctx *context) error {
+	if ins == nil || ctx == nil {
 		return ErrIncorrectParameter
 	}
 
 	/* 1. Memory allocation */
-	instance.memory = []block{}
-	for i := uint32(0); i < instance.memory_blocks; i++ {
-		instance.memory = append(instance.memory, block{})
+	ins.memory = []block{}
+	for i := uint32(0); i < ins.memoryBlocks; i++ {
+		ins.memory = append(ins.memory, block{})
 	}
 
 	/* 2. Initial hashing */
 	// H_0 + 8 extra bytes to produce the first blocks
-	blockhash := [ARGON2_PREHASH_SEED_LENGTH]byte{}
+	blockhash := [prehashSeedLength]byte{}
 
 	// Hash all inputs
-	if err := initial_hash(&blockhash, context, instance.variant); err != nil {
+	if err := initial_hash(&blockhash, ctx, ins.variant); err != nil {
 		return err
 	}
 
 	// Zero 8 extra bytes
-	secure_wipe_memory(blockhash[ARGON2_PREHASH_DIGEST_LENGTH:ARGON2_PREHASH_SEED_LENGTH])
+	secure_wipe_memory(blockhash[prehashDigestLength:prehashSeedLength])
 
 	/* 3. Creating first blocks, we always have at least two blocks in a slice */
-	fill_first_blocks(&blockhash, instance)
+	fill_first_blocks(&blockhash, ins)
 
 	/* Clearing the hash */
 	secure_wipe_memory(blockhash[:])
@@ -128,9 +123,9 @@ func initialize(instance *argon2_instance, context *argon2_context) error {
 	return nil
 }
 
-func initial_hash(blockhash *[ARGON2_PREHASH_SEED_LENGTH]byte, context *argon2_context, variant Variant) error {
+func initial_hash(blockhash *[prehashSeedLength]byte, ctx *context, variant Variant) error {
 	state, err := blake2b.New(&blake2b.Config{
-		Size: ARGON2_PREHASH_DIGEST_LENGTH,
+		Size: prehashDigestLength,
 	})
 	if err != nil {
 		return err
@@ -138,16 +133,16 @@ func initial_hash(blockhash *[ARGON2_PREHASH_SEED_LENGTH]byte, context *argon2_c
 
 	value := make([]byte, 4) // 32-bit expressed in 4xuint8
 
-	binary.LittleEndian.PutUint32(value, context.lanes)
+	binary.LittleEndian.PutUint32(value, ctx.lanes)
 	state.Write(value)
 
-	binary.LittleEndian.PutUint32(value, uint32(len(context.out)))
+	binary.LittleEndian.PutUint32(value, uint32(len(ctx.out)))
 	state.Write(value)
 
-	binary.LittleEndian.PutUint32(value, context.m_cost)
+	binary.LittleEndian.PutUint32(value, ctx.memoryCost)
 	state.Write(value)
 
-	binary.LittleEndian.PutUint32(value, context.t_cost)
+	binary.LittleEndian.PutUint32(value, ctx.timeCost)
 	state.Write(value)
 
 	binary.LittleEndian.PutUint32(value, ARGON2_VERSION_NUMBER)
@@ -156,36 +151,36 @@ func initial_hash(blockhash *[ARGON2_PREHASH_SEED_LENGTH]byte, context *argon2_c
 	binary.LittleEndian.PutUint32(value, uint32(variant))
 	state.Write(value)
 
-	binary.LittleEndian.PutUint32(value, uint32(len(context.pwd)))
+	binary.LittleEndian.PutUint32(value, uint32(len(ctx.pwd)))
 	state.Write(value)
-	if context.pwd != nil {
-		state.Write(context.pwd)
-		if context.flags&ARGON2_FLAG_CLEAR_PASSWORD != 0 {
-			secure_wipe_memory(context.pwd)
-			context.pwd = nil
+	if ctx.pwd != nil {
+		state.Write(ctx.pwd)
+		if ctx.flags&FlagClearPassword != 0 {
+			secure_wipe_memory(ctx.pwd)
+			ctx.pwd = nil
 		}
 	}
 
-	binary.LittleEndian.PutUint32(value, uint32(len(context.salt)))
+	binary.LittleEndian.PutUint32(value, uint32(len(ctx.salt)))
 	state.Write(value)
-	if context.salt != nil {
-		state.Write(context.salt)
+	if ctx.salt != nil {
+		state.Write(ctx.salt)
 	}
 
-	binary.LittleEndian.PutUint32(value, uint32(len(context.secret)))
+	binary.LittleEndian.PutUint32(value, uint32(len(ctx.secret)))
 	state.Write(value)
-	if context.secret != nil {
-		state.Write(context.secret)
-		if context.flags&ARGON2_FLAG_CLEAR_PASSWORD != 0 {
-			secure_wipe_memory(context.secret)
-			context.secret = nil
+	if ctx.secret != nil {
+		state.Write(ctx.secret)
+		if ctx.flags&FlagClearSecret != 0 {
+			secure_wipe_memory(ctx.secret)
+			ctx.secret = nil
 		}
 	}
 
-	binary.LittleEndian.PutUint32(value, uint32(len(context.ad)))
+	binary.LittleEndian.PutUint32(value, uint32(len(ctx.ad)))
 	state.Write(value)
-	if context.ad != nil {
-		state.Write(context.ad)
+	if ctx.ad != nil {
+		state.Write(ctx.ad)
 	}
 
 	result := state.Sum(nil)
@@ -208,39 +203,39 @@ func secure_wipe_memory_uint64(input []uint64) {
 	}
 }
 
-func fill_first_blocks(blockhash *[ARGON2_PREHASH_SEED_LENGTH]byte, instance *argon2_instance) error {
-	blockhash_bytes := make([]byte, ARGON2_BLOCK_SIZE)
-	for l := uint32(0); l < instance.lanes; l++ {
-		binary.LittleEndian.PutUint32(blockhash[ARGON2_PREHASH_DIGEST_LENGTH:], 0)
-		binary.LittleEndian.PutUint32(blockhash[ARGON2_PREHASH_DIGEST_LENGTH+4:], l)
-		if err := blake2b_long(blockhash_bytes, blockhash[:]); err != nil {
+func fill_first_blocks(blockhash *[prehashSeedLength]byte, ins *instance) error {
+	blockhash_bytes := make([]byte, blockSize)
+	for l := uint32(0); l < ins.lanes; l++ {
+		binary.LittleEndian.PutUint32(blockhash[prehashDigestLength:], 0)
+		binary.LittleEndian.PutUint32(blockhash[prehashDigestLength+4:], l)
+		if err := blakeLong(blockhash_bytes, blockhash[:]); err != nil {
 			return err
 		}
-		load_block(&instance.memory[l*instance.lane_length], blockhash_bytes)
+		load_block(&ins.memory[l*ins.laneLength], blockhash_bytes)
 
-		binary.LittleEndian.PutUint32(blockhash[ARGON2_PREHASH_DIGEST_LENGTH:], 1)
-		if err := blake2b_long(blockhash_bytes, blockhash[:]); err != nil {
+		binary.LittleEndian.PutUint32(blockhash[prehashDigestLength:], 1)
+		if err := blakeLong(blockhash_bytes, blockhash[:]); err != nil {
 			return err
 		}
-		load_block(&instance.memory[l*instance.lane_length+1], blockhash_bytes)
+		load_block(&ins.memory[l*ins.laneLength+1], blockhash_bytes)
 	}
 	secure_wipe_memory(blockhash_bytes)
 	return nil
 }
 
 func load_block(dst *block, input []byte) {
-	for i := 0; i < ARGON2_QWORDS_IN_BLOCK; i++ {
+	for i := 0; i < qwordsInBlock; i++ {
 		dst[i] = binary.LittleEndian.Uint64(input[i*8:])
 	}
 }
 
 func store_block(output []byte, src *block) {
-	for i := 0; i < ARGON2_QWORDS_IN_BLOCK; i++ {
+	for i := 0; i < qwordsInBlock; i++ {
 		binary.LittleEndian.PutUint64(output[i*8:], src[i])
 	}
 }
 
-func index_alpha(instance *argon2_instance, position *argon2_position, pseudo_rand uint32, same_lane bool) uint32 {
+func indexAlpha(ins *instance, pos *position, pseudoRand uint32, sameLane bool) uint32 {
 	/*
 	 * Pass 0:
 	 *      This lane : all already finished segments plus already constructed
@@ -257,46 +252,46 @@ func index_alpha(instance *argon2_instance, position *argon2_position, pseudo_ra
 		start_position, absolute_position uint32
 	)
 
-	if position.pass == 0 {
+	if pos.pass == 0 {
 		/* First pass */
-		if position.slice == 0 {
+		if pos.slice == 0 {
 			/* First slice */
 			reference_area_size =
-				position.index - 1 /* all but the previous */
+				pos.index - 1 /* all but the previous */
 		} else {
-			if same_lane {
+			if sameLane {
 				/* The same lane => add current segment */
 				reference_area_size =
-					uint32(position.slice)*instance.segment_length +
-						position.index - 1
+					uint32(pos.slice)*ins.segmentLength +
+						pos.index - 1
 			} else {
 				reference_area_size =
-					uint32(position.slice) * instance.segment_length
+					uint32(pos.slice) * ins.segmentLength
 
-				if position.index == 0 {
+				if pos.index == 0 {
 					reference_area_size -= 1
 				}
 			}
 		}
 	} else {
 		/* Second pass */
-		if same_lane {
-			reference_area_size = instance.lane_length -
-				instance.segment_length + position.index -
+		if sameLane {
+			reference_area_size = ins.laneLength -
+				ins.segmentLength + pos.index -
 				1
 		} else {
-			reference_area_size = instance.lane_length -
-				instance.segment_length
+			reference_area_size = ins.laneLength -
+				ins.segmentLength
 
-			if position.index == 0 {
+			if pos.index == 0 {
 				reference_area_size -= 1
 			}
 		}
 	}
 
-	/* 1.2.4. Mapping pseudo_rand to 0..<reference_area_size-1> and produce
+	/* 1.2.4. Mapping pseudoRand to 0..<reference_area_size-1> and produce
 	 * relative position */
-	relative_position = uint64(pseudo_rand)
+	relative_position = uint64(pseudoRand)
 	relative_position = relative_position * relative_position >> 32
 	relative_position = uint64(reference_area_size) - 1 -
 		(uint64(reference_area_size) * relative_position >> 32)
@@ -304,23 +299,23 @@ func index_alpha(instance *argon2_instance, position *argon2_position, pseudo_ra
 	/* 1.2.5 Computing starting position */
 	start_position = 0
 
-	if position.pass != 0 {
-		if position.slice == ARGON2_SYNC_POINTS-1 {
+	if pos.pass != 0 {
+		if pos.slice == syncPoints-1 {
 			start_position = 0
 		} else {
-			start_position = (uint32(position.slice) + 1) * instance.segment_length
+			start_position = (uint32(pos.slice) + 1) * ins.segmentLength
 		}
 	}
 
 	/* 1.2.6. Computing absolute position */
 	absolute_position = (start_position + uint32(relative_position)) %
-		instance.lane_length /* absolute position */
+		ins.laneLength /* absolute position */
 	return absolute_position
 }
 
-func clear_memory(instance *argon2_instance, clear bool) {
-	if instance.memory != nil && clear {
-		for _, b := range instance.memory {
+func clearMemory(ins *instance, clear bool) {
+	if ins.memory != nil && clear {
+		for _, b := range ins.memory {
 			for i, _ := range b {
 				b[i] = 0
 			}

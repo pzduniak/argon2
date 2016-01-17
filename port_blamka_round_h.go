@@ -24,7 +24,7 @@ func bkG(a, b, c, d *uint64) {
 	*b = rotr64(*b^*c, 63)
 }
 
-func blake2_round_nomsg(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15 *uint64) {
+func blakeRound(v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15 *uint64) {
 	bkG(v0, v4, v8, v12)
 	bkG(v1, v5, v9, v13)
 	bkG(v2, v6, v10, v14)

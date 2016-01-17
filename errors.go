@@ -4,6 +4,7 @@ import (
 	"errors"
 )
 
+// Various errors returned by the library
 var (
 	ErrIncorrectType      = errors.New("argon2: Invalid type passed (must be either Argon2i or Argon2d)")
 	ErrIncorrectParameter = errors.New("argon2: Incorrect parameter passed to the argon function")

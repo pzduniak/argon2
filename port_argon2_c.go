@@ -1,8 +1,8 @@
 package argon2
 
-func argon2_core(ctx *argon2_context, variant Variant) error {
+func core(ctx *context, variant Variant) error {
 	/* 1. Validate all inputs */
-	if err := validate_inputs(ctx); err != nil {
+	if err := validateInputs(ctx); err != nil {
 		return err
 	}
 
@@ -11,73 +11,69 @@ func argon2_core(ctx *argon2_context, variant Variant) error {
 	}
 
 	/* 2. Align memory size */
-	memory_blocks := ctx.m_cost
-	if memory_blocks < 2*ARGON2_SYNC_POINTS*ctx.lanes {
-		memory_blocks = 2 * ARGON2_SYNC_POINTS * ctx.lanes
+	memoryBlocks := ctx.memoryCost
+	if memoryBlocks < 2*syncPoints*ctx.lanes {
+		memoryBlocks = 2 * syncPoints * ctx.lanes
 	}
 
-	segment_length := memory_blocks / (ctx.lanes * ARGON2_SYNC_POINTS)
+	segmentLength := memoryBlocks / (ctx.lanes * syncPoints)
 	// Ensure that all segments have equal length
-	memory_blocks = segment_length * (ctx.lanes * ARGON2_SYNC_POINTS)
+	memoryBlocks = segmentLength * (ctx.lanes * syncPoints)
 
-	instance := argon2_instance{
-		memory:         nil,
-		passes:         ctx.t_cost,
-		memory_blocks:  memory_blocks,
-		segment_length: segment_length,
-		lane_length:    segment_length * ARGON2_SYNC_POINTS,
-		lanes:          ctx.lanes,
-		threads:        ctx.threads,
-		variant:        variant,
+	ins := instance{
+		memory:        nil,
+		passes:        ctx.timeCost,
+		memoryBlocks:  memoryBlocks,
+		segmentLength: segmentLength,
+		laneLength:    segmentLength * syncPoints,
+		lanes:         ctx.lanes,
+		threads:       ctx.threads,
+		variant:       variant,
 	}
 
 	/* 3. Initialization: Hashing inputs, allocating memory, filling
 	   first blocks. */
-	if err := initialize(&instance, ctx); err != nil {
+	if err := initialize(&ins, ctx); err != nil {
 		return err
 	}
 
 	/* 4. Filling memory */
-	if err := fill_memory_blocks(&instance); err != nil {
+	if err := fillMemoryBlocks(&ins); err != nil {
 		return err
 	}
 
-	/* 5. Finalization */
-	/*if err := finalize(ctx, &instance); err != nil {
-		return err
-	}*/
-	finalize(ctx, &instance)
+	finalize(ctx, &ins)
 
 	return nil
 }
 
-func finalize(context *argon2_context, instance *argon2_instance) {
-	if context == nil || instance == nil {
+func finalize(ctx *context, ins *instance) {
+	if ctx == nil || ins == nil {
 		return
 	}
 
 	var blockhash block
 
-	copy_block(&blockhash, &instance.memory[instance.lane_length-1])
+	copyBlock(&blockhash, &ins.memory[ins.laneLength-1])
 
 	/* XOR the last blocks */
-	for l := uint32(1); l < instance.lanes; l++ {
-		last_block_in_lane := l*instance.lane_length + (instance.lane_length - 1)
-		xor_block(&blockhash, &instance.memory[last_block_in_lane])
+	for l := uint32(1); l < ins.lanes; l++ {
+		lastBlockInLane := l*ins.laneLength + (ins.laneLength - 1)
+		xorBlock(&blockhash, &ins.memory[lastBlockInLane])
 	}
 
 	/* Hash the result */
 	{
-		var blockhash_bytes [ARGON2_BLOCK_SIZE]byte
-		store_block(blockhash_bytes[:], &blockhash)
-		blake2b_long(context.out, blockhash_bytes[:])
+		var blockhashBytes [blockSize]byte
+		store_block(blockhashBytes[:], &blockhash)
+		blakeLong(ctx.out, blockhashBytes[:])
 		secure_wipe_memory_uint64(blockhash[:])
-		secure_wipe_memory(blockhash_bytes[:])
+		secure_wipe_memory(blockhashBytes[:])
 	}
 
 	/* Clear memory */
-	clear_memory(instance, context.flags&ARGON2_FLAG_CLEAR_PASSWORD != 0)
+	clearMemory(ins, ctx.flags&FlagClearPassword != 0)
 
 	/* Deallocate the memory */
-	//free_memory(instance.memory)
+	//free_memory(ins.memory)
 }

@@ -7,21 +7,17 @@ import (
 )
 
 const (
-	BLAKE2B_BLOCKBYTES    = 128
-	BLAKE2B_OUTBYTES      = 64
-	BLAKE2B_KEYBYTES      = 64
-	BLAKE2B_SALTBYTES     = 16
-	BLAKE2B_PERSONALBYTES = 16
+	blakeOutBytes = 64
 )
 
-func blake2b_long(out []byte, in []byte) error {
+func blakeLong(out []byte, in []byte) error {
 	var (
-		outlen       = len(out)
-		outlen_bytes = make([]byte, 4)
+		outlen      = len(out)
+		outlenBytes = make([]byte, 4)
 	)
-	binary.LittleEndian.PutUint32(outlen_bytes, uint32(outlen))
+	binary.LittleEndian.PutUint32(outlenBytes, uint32(outlen))
 
-	if len(out) <= BLAKE2B_OUTBYTES {
+	if len(out) <= blakeOutBytes {
 		hash, err := blake2b.New(&blake2b.Config{
 			Size: uint8(outlen),
 		})
@@ -29,7 +25,7 @@ func blake2b_long(out []byte, in []byte) error {
 			return err
 		}
 
-		hash.Write(outlen_bytes)
+		hash.Write(outlenBytes)
 		hash.Write(in)
 		sum := hash.Sum(nil)
 		copy(out, sum)
@@ -37,43 +33,42 @@ func blake2b_long(out []byte, in []byte) error {
 	}
 
 	var (
-		toproduce uint32
-		//out_buffer [BLAKE2B_OUTBYTES]byte
-		in_buffer [BLAKE2B_OUTBYTES]byte
+		toProduce uint32
+		buffer    [blakeOutBytes]byte
 	)
 
 	hash, err := blake2b.New(&blake2b.Config{
-		Size: BLAKE2B_OUTBYTES,
+		Size: blakeOutBytes,
 	})
 	if err != nil {
 		return err
 	}
 
-	hash.Write(outlen_bytes)
+	hash.Write(outlenBytes)
 	hash.Write(in)
 	sum := hash.Sum(nil)
-	copy(out, sum[:BLAKE2B_OUTBYTES/2])
-	out = out[BLAKE2B_OUTBYTES/2:]
-	toproduce = uint32(outlen) - BLAKE2B_OUTBYTES/2
+	copy(out, sum[:blakeOutBytes/2])
+	out = out[blakeOutBytes/2:]
+	toProduce = uint32(outlen) - blakeOutBytes/2
 
-	for toproduce > BLAKE2B_OUTBYTES {
-		copy(in_buffer[:], sum)
+	for toProduce > blakeOutBytes {
+		copy(buffer[:], sum)
 		hash.Reset()
-		hash.Write(in_buffer[:])
+		hash.Write(buffer[:])
 		sum = hash.Sum(nil)
-		copy(out, sum[:BLAKE2B_OUTBYTES/2])
-		out = out[BLAKE2B_OUTBYTES/2:]
-		toproduce -= BLAKE2B_OUTBYTES / 2
+		copy(out, sum[:blakeOutBytes/2])
+		out = out[blakeOutBytes/2:]
+		toProduce -= blakeOutBytes / 2
 	}
 
-	copy(in_buffer[:], sum[:BLAKE2B_OUTBYTES])
+	copy(buffer[:], sum[:blakeOutBytes])
 	hash, err = blake2b.New(&blake2b.Config{
-		Size: uint8(toproduce),
+		Size: uint8(toProduce),
 	})
 	if err != nil {
 		return err
 	}
-	hash.Write(in_buffer[:])
+	hash.Write(buffer[:])
 	sum = hash.Sum(nil)
 	copy(out, sum)
 
