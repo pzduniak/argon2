@@ -22,7 +22,7 @@ const (
 	maxSecretLength   = 0xFFFFFFFF
 )
 
-// FLags regarding clearing of inputs during hashing
+// Flags regarding clearing of inputs during hashing
 const (
 	FlagClearPassword = 1 << 0
 	FlagClearSecret   = 1 << 1
