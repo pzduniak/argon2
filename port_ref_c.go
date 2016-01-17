@@ -1,9 +1,5 @@
 package argon2
 
-/*import (
-	"log"
-)*/
-
 func fill_segment(instance *argon2_instance, position argon2_position) {
 	var (
 		ref_block, curr_block            *block
@@ -43,8 +39,6 @@ func fill_segment(instance *argon2_instance, position argon2_position) {
 	}
 
 	for i := starting_index; i < instance.segment_length; i++ {
-		curr_offset++
-		prev_offset++
 		/* 1.1 Rotating prev_offest if needed */
 		if curr_offset%instance.lane_length == 1 {
 			prev_offset = curr_offset - 1
@@ -74,9 +68,11 @@ func fill_segment(instance *argon2_instance, position argon2_position) {
 		ref_block =
 			&instance.memory[uint64(instance.lane_length)*ref_lane+ref_index]
 		//log.Printf("%d/%d\n", curr_offset, len(instance.memory))
-		// todo: verify
-		curr_block = &instance.memory[curr_offset-1]
+		curr_block = &instance.memory[curr_offset]
 		fill_block(&instance.memory[prev_offset], ref_block, curr_block)
+
+		curr_offset++
+		prev_offset++
 	}
 }
 
@@ -104,7 +100,6 @@ func generate_addresses(instance *argon2_instance, position *argon2_position, ps
 			fill_block(&zero_block, &input_block, &address_block)
 			fill_block(&zero_block, &address_block, &address_block)
 		}
-
 		pseudo_rands[i] = address_block[i%ARGON2_ADDRESSES_IN_BLOCK]
 	}
 }
@@ -135,35 +130,25 @@ func fill_block(prev_block, ref_block, next_block *block) {
 	/* Apply Blake2 on columns of 64-bit words: (0,1,...,15) , then
 	   (16,17,..31)... finally (112,113,...127) */
 	for i := 0; i < 8; i++ {
-		blockR[16*i], blockR[16*i+1], blockR[16*i+2],
-			blockR[16*i+3], blockR[16*i+4], blockR[16*i+5],
-			blockR[16*i+6], blockR[16*i+7], blockR[16*i+8],
-			blockR[16*i+9], blockR[16*i+10], blockR[16*i+11],
-			blockR[16*i+12], blockR[16*i+13], blockR[16*i+14],
-			blockR[16*i+15] = blake2_round_nomsg(
-			blockR[16*i], blockR[16*i+1], blockR[16*i+2],
-			blockR[16*i+3], blockR[16*i+4], blockR[16*i+5],
-			blockR[16*i+6], blockR[16*i+7], blockR[16*i+8],
-			blockR[16*i+9], blockR[16*i+10], blockR[16*i+11],
-			blockR[16*i+12], blockR[16*i+13], blockR[16*i+14],
-			blockR[16*i+15])
+		blake2_round_nomsg(
+			&blockR[16*i], &blockR[16*i+1], &blockR[16*i+2],
+			&blockR[16*i+3], &blockR[16*i+4], &blockR[16*i+5],
+			&blockR[16*i+6], &blockR[16*i+7], &blockR[16*i+8],
+			&blockR[16*i+9], &blockR[16*i+10], &blockR[16*i+11],
+			&blockR[16*i+12], &blockR[16*i+13], &blockR[16*i+14],
+			&blockR[16*i+15])
 	}
 
 	/* Apply Blake2 on rows of 64-bit words: (0,1,16,17,...112,113), then
 	   (2,3,18,19,...,114,115).. finally (14,15,30,31,...,126,127) */
 	for i := 0; i < 8; i++ {
-		blockR[2*i], blockR[2*i+1], blockR[2*i+16],
-			blockR[2*i+17], blockR[2*i+32], blockR[2*i+33],
-			blockR[2*i+48], blockR[2*i+49], blockR[2*i+64],
-			blockR[2*i+65], blockR[2*i+80], blockR[2*i+81],
-			blockR[2*i+96], blockR[2*i+97], blockR[2*i+112],
-			blockR[2*i+113] = blake2_round_nomsg(
-			blockR[2*i], blockR[2*i+1], blockR[2*i+16],
-			blockR[2*i+17], blockR[2*i+32], blockR[2*i+33],
-			blockR[2*i+48], blockR[2*i+49], blockR[2*i+64],
-			blockR[2*i+65], blockR[2*i+80], blockR[2*i+81],
-			blockR[2*i+96], blockR[2*i+97], blockR[2*i+112],
-			blockR[2*i+113])
+		blake2_round_nomsg(
+			&blockR[2*i], &blockR[2*i+1], &blockR[2*i+16],
+			&blockR[2*i+17], &blockR[2*i+32], &blockR[2*i+33],
+			&blockR[2*i+48], &blockR[2*i+49], &blockR[2*i+64],
+			&blockR[2*i+65], &blockR[2*i+80], &blockR[2*i+81],
+			&blockR[2*i+96], &blockR[2*i+97], &blockR[2*i+112],
+			&blockR[2*i+113])
 	}
 
 	copy_block(next_block, &block_tmp)

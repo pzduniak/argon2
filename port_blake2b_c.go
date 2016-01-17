@@ -15,12 +15,15 @@ const (
 )
 
 func blake2b_long(out []byte, in []byte) error {
-	outlen_bytes := make([]byte, 4)
-	binary.LittleEndian.PutUint32(outlen_bytes, uint32(len(out)))
+	var (
+		outlen       = len(out)
+		outlen_bytes = make([]byte, 4)
+	)
+	binary.LittleEndian.PutUint32(outlen_bytes, uint32(outlen))
 
-	if len(out) < BLAKE2B_OUTBYTES {
+	if len(out) <= BLAKE2B_OUTBYTES {
 		hash, err := blake2b.New(&blake2b.Config{
-			Size: uint8(len(out)),
+			Size: uint8(outlen),
 		})
 		if err != nil {
 			return err
@@ -50,8 +53,8 @@ func blake2b_long(out []byte, in []byte) error {
 	hash.Write(in)
 	sum := hash.Sum(nil)
 	copy(out, sum[:BLAKE2B_OUTBYTES/2])
-	out = out[BLAKE2B_OUTBYTES:]
-	toproduce = uint32(len(out)) + BLAKE2B_OUTBYTES/2
+	out = out[BLAKE2B_OUTBYTES/2:]
+	toproduce = uint32(outlen) - BLAKE2B_OUTBYTES/2
 
 	for toproduce > BLAKE2B_OUTBYTES {
 		copy(in_buffer[:], sum)
@@ -59,8 +62,8 @@ func blake2b_long(out []byte, in []byte) error {
 		hash.Write(in_buffer[:])
 		sum = hash.Sum(nil)
 		copy(out, sum[:BLAKE2B_OUTBYTES/2])
-		out = out[BLAKE2B_OUTBYTES:]
-		toproduce -= BLAKE2B_OUTBYTES
+		out = out[BLAKE2B_OUTBYTES/2:]
+		toproduce -= BLAKE2B_OUTBYTES / 2
 	}
 
 	copy(in_buffer[:], sum[:BLAKE2B_OUTBYTES])
