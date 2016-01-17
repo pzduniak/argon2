@@ -1,12 +1,15 @@
 package argon2
 
+var (
+	m = uint64(0xFFFFFFFF)
+)
+
 func fBlaMka(x, y *uint64) {
 	var (
-		m  = uint64(0xFFFFFFFF)
 		xy = (*x & m) * (*y & m)
 	)
-	result := *x + *y + 2*xy
-	*x = result
+
+	*x += *y + 2*xy
 }
 
 func rotr64(w, c uint64) uint64 {
