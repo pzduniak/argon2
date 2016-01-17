@@ -16,7 +16,18 @@ go get github.com/pzduniak/argon2
 
 ## Performance compared to bindings
 
-Tests were ran on a 2015 Macbook Pro Retina 15"
+Tests were ran on a 2015 Macbook Pro Retina 15". The conversion is ~11 times
+slower. [Most time](https://gist.github.com/pzduniak/d6afbbefa0d04332681d) is
+spent in the blake2b function (bkG in port\_blake2b\_c.go).
+
+```
+➜  argon2 git:(master) go test -bench=.
+testing: warning: no tests to run
+PASS
+BenchmarkConversion	      30	  45942615 ns/op
+BenchmarkBindings  	     300	   4170861 ns/op
+ok  	github.com/pzduniak/argon2	3.134s
+```
 
 ## Usage
 
