@@ -1,5 +1,5 @@
-// Package argon2 is a conversion of the libargon2 library. Exports a simple
-// API with the most essential features.
+// Package argon2 is a pure Go conversion of the libargon2 library. Exports a
+// simple API with the most essential features.
 package argon2
 
 // Key derives an Argon2(i|d) hash from the input.
