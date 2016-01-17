@@ -5,8 +5,7 @@ library. Exports a simple API with only several features.
 
 Please note: due to the nature of the conversion, its performance might be lower
 than of [the bindings](https://github.com/tvdburgt/go-argon2). Also the memory 
-clearing is NOT ported properly, it will be eventually fixed, but DO NOT rely
-on this feature now.
+clearing is NOT ported and depends on the GC.
 
 ## Installation
 
@@ -16,17 +15,18 @@ go get github.com/pzduniak/argon2
 
 ## Performance compared to bindings
 
-Tests were ran on a 2015 Macbook Pro Retina 15". The conversion is ~11 times
-slower. [Most time](https://gist.github.com/pzduniak/d6afbbefa0d04332681d) is
-spent in the blake2b function (bkG in port\_blake2b\_c.go).
+Tests were ran on a 2015 Macbook Pro Retina 15". The conversion is ~4.2 times
+slower. 
 
 ```
-➜  argon2 git:(master) go test -bench=.
+➜  argon2 git:(master) ✗ go test -bench=.
 testing: warning: no tests to run
 PASS
-BenchmarkConversion	      30	  45942615 ns/op
-BenchmarkBindings  	     300	   4170861 ns/op
-ok  	github.com/pzduniak/argon2	3.134s
+BenchmarkBConversion	     100	  17760196 ns/op
+BenchmarkBBindings  	     300	   4136977 ns/op
+BenchmarkMConversion	     100	  18320990 ns/op
+BenchmarkMMagical   	     100	  15448272 ns/op
+ok  	github.com/pzduniak/argon2	7.787s
 ```
 
 ## Usage
