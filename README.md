@@ -55,6 +55,6 @@ func main() {
 		return
 	}
 
-	fmt.Println(strings.ToUpper(hex.EncodeToString(output)))
+	fmt.Println(hex.EncodeToString(output))
 }
 ```
