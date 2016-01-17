@@ -4,7 +4,7 @@ Go conversion of the libargon2 library. Exports a simple API with only
 several features.
 
 Please note: due to the nature of the conversion, its performance might be lower
-than of the bindings. Also the memory clearing might be wonky, it will be
+than of the bindings. Also the memory clearing is NOT ported properly, it will be
 eventually fixed, but DO NOT rely on this feature now.
 
 ## Installation
