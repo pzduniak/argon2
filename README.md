@@ -1,7 +1,9 @@
 # argon2
 
 Go conversion of the [libargon2](https://github.com/P-H-C/phc-winner-argon2)
-library. Exports a simple API with only several features.
+library. Exports a simple API with only several features. Unwrapped round
+function is taken from [magical/argon2](https://github.com/magical/argon2),
+licensed under the MIT license.
 
 Please note: due to the nature of the conversion, its performance might be lower
 than of [the bindings](https://github.com/tvdburgt/go-argon2). Also the memory 
