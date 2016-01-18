@@ -25,10 +25,10 @@ func blakeLong(out []byte, in []byte) error {
 			return err
 		}
 
-		if _, err := hash.Write(outlenBytes); err != nil {
+		if _, err = hash.Write(outlenBytes); err != nil {
 			return err
 		}
-		if _, err := hash.Write(in); err != nil {
+		if _, err = hash.Write(in); err != nil {
 			return err
 		}
 		sum := hash.Sum(nil)

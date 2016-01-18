@@ -76,10 +76,6 @@ func fillSegment(ins *instance, pos position) {
 func generateAddresses(ins *instance, pos *position, pseudoRands []uint64) {
 	var zeroBlock, inputBlock, addressBlock, tmpBlock block
 
-	initBlockValue(&zeroBlock, 0)
-	initBlockValue(&inputBlock, 0)
-	initBlockValue(&addressBlock, 0)
-
 	if ins == nil || pos == nil {
 		return
 	}
@@ -99,12 +95,6 @@ func generateAddresses(ins *instance, pos *position, pseudoRands []uint64) {
 			round(&addressBlock, &tmpBlock, &zeroBlock)
 		}
 		pseudoRands[i] = addressBlock[i%addressesInBlock]
-	}
-}
-
-func initBlockValue(b *block, in byte) {
-	for i := range b {
-		b[i] = uint64(in)
 	}
 }
 
