@@ -107,10 +107,7 @@ func initialize(ins *instance, ctx *context) error {
 	}
 
 	/* 1. Memory allocation */
-	ins.memory = []block{}
-	for i := uint32(0); i < ins.memoryBlocks; i++ {
-		ins.memory = append(ins.memory, block{})
-	}
+	ins.memory = make([]block, ins.memoryBlocks)
 
 	/* 2. Initial hashing */
 	// H_0 + 8 extra bytes to produce the first blocks
