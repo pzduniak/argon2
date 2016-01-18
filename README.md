@@ -17,18 +17,18 @@ go get github.com/pzduniak/argon2
 
 ## Performance compared to bindings
 
-Tests were ran on a 2015 Macbook Pro Retina 15". The conversion is ~4.2 times
+Tests were ran on a 2015 Macbook Pro Retina 15". The conversion is ~3.5 times
 slower. 
 
 ```
 ➜  argon2 git:(master) ✗ go test -bench=.
 testing: warning: no tests to run
 PASS
-BenchmarkBConversion	     100	  17760196 ns/op
-BenchmarkBBindings  	     300	   4136977 ns/op
-BenchmarkMConversion	     100	  18320990 ns/op
-BenchmarkMMagical   	     100	  15448272 ns/op
-ok  	github.com/pzduniak/argon2	7.787s
+BenchmarkBConversion	     100	  14687543 ns/op	 4318704 B/op	     351 allocs/op
+BenchmarkBBindings  	     300	   4093711 ns/op	     320 B/op	       3 allocs/op
+BenchmarkMConversion	     100	  14622942 ns/op	 4318704 B/op	     351 allocs/op
+BenchmarkMMagical   	     100	  14668521 ns/op	 4196464 B/op	       7 allocs/op
+ok  	github.com/pzduniak/argon2	6.099s
 ```
 
 ## Usage
