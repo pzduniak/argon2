@@ -1,6 +1,6 @@
 package argon2
 
-func fillSegment(ins *instance, pos position) {
+func fillSegment(ins *instance, pos *position) {
 	var (
 		refBlock, currBlock           *block
 		pseudoRand, refIndex, refLane uint64
@@ -18,7 +18,7 @@ func fillSegment(ins *instance, pos position) {
 	pseudoRands = make([]uint64, ins.segmentLength)
 
 	if dataIndependentAddressing {
-		generateAddresses(ins, &pos, pseudoRands)
+		generateAddresses(ins, pos, pseudoRands)
 	}
 
 	if pos.pass == 0 && pos.slice == 0 {
@@ -60,7 +60,7 @@ func fillSegment(ins *instance, pos position) {
 
 		/* 1.2.3 Computing the number of possible reference blocks within lane */
 		pos.index = i
-		refIndex = uint64(indexAlpha(ins, &pos, uint32(pseudoRand&0xFFFFFFFF), refLane == uint64(pos.lane)))
+		refIndex = uint64(indexAlpha(ins, pos, uint32(pseudoRand&0xFFFFFFFF), refLane == uint64(pos.lane)))
 
 		/* 2 Creating a new block */
 		refBlock =

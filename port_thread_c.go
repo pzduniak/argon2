@@ -25,10 +25,10 @@ func fillMemoryBlocks(ins *instance) error {
 					index: 0,
 				}
 
-				go func(ins *instance, pos position) {
+				go func(ins *instance, pos *position) {
 					defer wg.Done()
 					fillSegment(ins, pos)
-				}(ins, pos)
+				}(ins, &pos)
 			}
 
 			wg.Wait()
