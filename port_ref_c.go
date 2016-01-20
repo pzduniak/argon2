@@ -15,9 +15,8 @@ func fillSegment(ins *instance, pos *position) {
 
 	dataIndependentAddressing = (ins.variant == Argon2i)
 
-	pseudoRands = make([]uint64, ins.segmentLength)
-
 	if dataIndependentAddressing {
+		pseudoRands = make([]uint64, ins.segmentLength)
 		generateAddresses(ins, pos, pseudoRands)
 	}
 
