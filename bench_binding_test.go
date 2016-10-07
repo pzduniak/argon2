@@ -24,13 +24,13 @@ func BenchmarkBBindings(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		bc := bind.Context{
+		ctx := &bind.Context{
 			Iterations:  3,
 			Parallelism: 4,
 			Memory:      4096,
 			HashLen:     32,
 			Mode:        bind.ModeArgon2i,
 		}
-		bc.Hash(password, salt)
+		bind.Hash(ctx, password, salt)
 	}
 }
