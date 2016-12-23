@@ -1,5 +1,12 @@
 # argon2
 
+** WARNING: This is a port of the argon2 version 1.0, which is vulnerable to some
+tradeoff attacks. [Issue #2](https://github.com/pzduniak/argon2/issues/2) was created
+to track the progress. Up until this is fixed, using `pzduniak/argon` is not recommended.
+This library was written to allow usage of libargon2 in Go on Windows. Recently I have
+made some changes to the `tvdburgt/go-argon2` bindings so that it works in such
+environment. [Link's here.](https://github.com/pzduniak/go-argon2) **
+
 Go conversion of the [libargon2](https://github.com/P-H-C/phc-winner-argon2)
 library. Exports a simple API with only several features. Unwrapped round
 function is taken from [magical/argon2](https://github.com/magical/argon2),
